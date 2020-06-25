@@ -1,0 +1,81 @@
+<style>
+    .login-title {
+        margin-top: 0.5cm;
+        color: #E62490;
+        font-size: 25px;
+        font-variant: small-caps;
+        text-align: center;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .form {
+        margin-top: 15%;
+        margin-bottom: 5%;
+        width: 100%;
+        color:#4997D6;
+        font-size: 20px;
+    }
+    .form label {
+        color:#4997D6;
+        font-size: 20px;
+    }
+    .form .input-text {
+        width: 100%;
+    }
+    .form-group {
+        width: 100%;
+    }
+    .check {
+        margin-left: 1%;
+    }
+    .check-text {
+        margin-left: 5%;
+    }
+    .btn_general {
+        margin-top: 10%;
+        text-align: center;
+    }
+    .centered {
+        text-align: center;
+    }
+</style>
+<script type="text/javascript">
+    window.current_page="login";
+    document.getElementById("cancel").addEventListener("click",cancel);
+    function cancel() {
+        location.reload();
+    }
+    async function login() {
+        let tosend = {
+            username: $("#username").val(),
+            password: $("#password").val()
+        }
+        for(let [key, value] of Object.entries(tosend)) {
+            if (value != 0 && (value == "" || value == undefined)) {
+                throw_error("Le champ "+key+" n'a pas été renseigné, veuillez le renseigner !", "Erreur Formulaire");
+                return;
+            }
+        }
+        let rep = await askdata("login",tosend);
+        if (rep.success == false) {
+            throw_error("Échec de connexion : "+rep.message,"Échec de connexion")
+        }
+    }
+</script>
+<img class="fixed-logo" src="media/img/logo.png">
+<div class="login-title">CONNEXION</div>
+<form action="#" onsubmit="login();return false">
+    <div class="form">
+        <div class="form-group">
+            <label for="username">Nom d'utilisateur :</label>
+            <input id="username" type="text" class="form-control input-text" required placeholder="Entrez votre nom d'utilisateur">
+        </div>
+        <div class="form-group">
+            <label for="password">Mot de passe :</label>
+            <input id="password" type="password" class="form-control input-text" required placeholder="Entrez votre mot de passe">
+        </div>
+        <div class="form-group centered">
+            <button class="btn-2" id="cancel" type="button" style="width:40%">Annuler</button><label class="mid"  style="width:20%"></label><input type="submit" class="btn-3 btn_general" style="width:40%" value="Se Connecter">
+        </div>
+    </div>
+</form>

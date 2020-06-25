@@ -1,0 +1,230 @@
+<style>
+    .page {
+        margin-top: 15%;
+        margin-bottom: 5%;
+        width: 100%;
+    }
+    .alert-title {
+        margin-top: 0.5cm;
+        color: #E62490;
+        font-size: 25px;
+        font-variant: small-caps;
+        text-align: center;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .form {
+        margin-top: 15%;
+        margin-bottom: 5%;
+        width: 100%;
+        color:#4997D6;
+        font-size: 20px;
+    }
+    .form label {
+        color:#4997D6;
+        font-size: 20px;
+    }
+    .form .input-text {
+        width: 100%;
+    }
+    .form-group {
+        width: 100%;
+    }
+    .check {
+        margin-left: 1%;
+    }
+    .check-text {
+        margin-left: 5%;
+    }
+
+</style>
+<script>
+    window.current_page="send_alert";
+    document.GPS_AUTO = true;
+    document.currentpostion = undefined;
+
+    document.getElementById("cancel").addEventListener("click",back);
+    async function back() {
+        await change_page("home");
+    }
+    document.getElementById("toggler-gps").addEventListener("click",toggleGPStype);
+    function toggleGPStype() {
+        if (document.GPS_AUTO) {
+            $("#gps-auto").css("display","none");
+            $("#gps-text").css("display","block");
+            document.GPS_AUTO = false;
+        } else {
+            $("#gps-auto").css("display","block");
+            $("#gps-text").css("display","none");
+            document.GPS_AUTO = true;
+        }
+    }
+    document.getElementById("gps").addEventListener("click",getAutoGPS);
+    function getloc(pos) {
+        document.currentpostion = pos.latitude+","+pos.longitude;
+    }
+
+    function getAutoGPS() {
+        if(device.platform == "browser") {
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(getloc);
+                $("#gps-auto-val").val(document.currentpostion);
+            } else {
+                throw_error("La géolocalisation n'est pas pas prise en charge par ce navigateur.<br>Veuillez entrer la position dans la zone de texte.","Erreur GPS");
+                toggleGPStype();
+                $("#gpshelp").css("display","none");
+            }
+            if (typeof(document.currentpostion) == "undefined") {
+                throw_error("La position de votre appareil n'a pu être récupérée.","Erreur GPS");
+                toggleGPStype();
+                $("#gpshelp").css("display","none");
+            }
+        } else {
+            function onError(error) {
+                throw_error("Une erreur est survenue lors de la géolocalisation : "+error.code+" . Message : "+error.message);
+                toggleGPStype();
+            }
+            function onSuccess(pos) {
+                let position = pos.coords.latitude+","+pos.coords.longitude;
+                $("#gps-auto-val").val(position);
+            }
+            navigator.geolocation.getCurrentPosition(onSuccess, onError);
+        }
+    }
+
+    async function send_alert() {
+        let gps;
+        if(document.GPS_AUTO) {
+            gps = $("#gps-auto-val").val();
+        } else {
+            gps = $("#gps-text-val").val();
+        }
+        
+        if (gps == "") {gps=null}
+
+        let image = null;
+        if ($('#photo-val').val() != "") {
+            image = $("#photo-val").val();
+            image = btoa(image);
+        }
+
+        let tosend = {
+            content : $("#content").val(),
+            title : $("#title").val(),
+            location : gps,
+            img : image
+        }
+
+        let rep = await askdata_big("send_alert",tosend, getUserToken());
+        if (rep.success == false) {
+            $("#loadModal").modal("hide");
+            throw_error(rep.message,"Erreur");
+        }
+
+    }
+    function readFile() {
+  
+        if (this.files && this.files[0]) {
+            
+            var FR= new FileReader();
+            
+            FR.addEventListener("load", function(e) {
+                $("#photo-preview").css("display","block");
+                $("#photo-preview").attr("src",e.target.result);
+                $("#photo-val").val(e.target.result);    
+            }); 
+            
+            FR.readAsDataURL( this.files[0] );
+        } else {
+            $("#photo-preview").css("display","none");
+        }    
+    }
+
+    function snap() {
+    if (device.platform != "browser") {
+            function cameraSuccess(imgdata) {
+                $("#photo-preview").css("display","block");
+                $("#photo-preview").attr("src","data:image/jpeg;base64,"+imgdata);
+                $("#photo-val").val("data:image/jpeg;base64,"+imgdata);   
+            }
+            function cameraError(msg) {
+                if (msg != "No Image Selected") {
+                throw_error("Une erreur est survenue lors de la capture de la photo : "+ msg);
+            }
+            $("#photo-preview").attr("src","");
+            $("#photo-val").val("");
+        }
+            navigator.camera.getPicture(cameraSuccess, cameraError,{destinationType: Camera.DestinationType.DATA_URL});
+        }
+    }
+    
+
+    function initThisPage() {
+        let imgpos = $("#photo-input");
+        if(device.platform == "browser") {
+            let input = document.createElement("input");
+            input.id="photo";
+            imgpos.append(input);
+            input = $("#photo");
+            input.attr("type","file");
+            input.attr("class","form-control-file");
+            input.attr("accept","image/*");
+            document.getElementById("photo").addEventListener("change", readFile);
+        } else {
+            let input = document.createElement("button");
+            input.innerHTML = "Prendre une Photo";
+            input.addEventListener("click",snap);
+            input.type="button";
+            imgpos.append(input);
+        }
+        
+    }
+</script>
+<img class="fixed-logo" src="media/img/logo.png">
+<div class="alert-title">ENVOYEZ UNE ALERTE !</div>
+<form action="#" onsubmit="send_alert();return false">
+    <div class="form">    
+        <div class="form-group">
+            <label for="title">Titre de l'Alerte :</label>
+            <input id="title" type="text" class="form-control input-text" required placeholder="Entrez le titre de votre alerte">
+        </div>
+
+        <div class="form-group">
+            <label for="content">Description de votre Alerte :</label>
+            <!-- <input id="content" type="text" class="form-control input-text" required placeholder="Entrez votre nom d'utilisateur"> -->
+            <textarea class="form-control input-text" id="content" rows="3" required placeholder="Entrez la description de votre alerte"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="photo">Photo de l'Alerte (optionnel)</label>
+            <div id="photo-input">
+                <!-- <input type="file" class="form-control-file" id="photo" aria-describedby="fileHelp" accept="image/*"> -->
+            </div>
+            <input type="hidden" id="photo-val">
+            <img id="photo-preview" height="150" style="display: none; margin-left: auto; margin-right: auto;">
+            <small id="fileHelp" class="form-text text-muted">La photo est optionnelle.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="gps">Position de l'Alerte (optionnel)</label>
+            <div id="gps-auto">
+                <input class="form-check-input check" type="checkbox" value="" id="gps">
+                <input type="hidden" id="gps-auto-val" value="">
+                <label for="gps" class="check-text">Prendre la position de cet appareil</label>
+            </div>
+            <div id="gps-text" style="display: none;">
+                <input class="form-control input-text" type="text" value="" id="gps-text-val" placeholder="Entrez la position de l'alerte ici">
+            </div>
+            <small id="gpshelp" class="form-text text-muted">Vous pouvez également entrer la position de manière textuelle en cliquant <a href="#" id="toggler-gps">ici</a></small>
+        </div>
+
+        <div class="form-group">
+            <button class="btn-2" id="cancel" type="button" style="width:40%">Annuler</button><label class="mid"  style="width:20%"></label><input type="submit" class="btn-3 btn_general" id="submit" value="Valider" style="width:40%">
+        </div>
+
+
+    </div>
+    <script>
+        initThisPage();
+    </script>
+</form>

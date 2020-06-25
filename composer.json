@@ -1,0 +1,7 @@
+{
+    "name": "virgile/carry_server",
+    "description": "Serveur Carry (remplacement stage)",
+    "require": {
+        "rbdwllr/reallysimplejwt": "^3.0"
+    }
+}

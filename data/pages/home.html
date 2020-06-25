@@ -1,0 +1,231 @@
+
+<style>
+    .home-title {
+        top: 0.5cm;
+        color: #E62490;
+        font-size: 25px;
+        font-variant: small-caps;
+        text-align: center;
+        font-weight: bold;
+        text-decoration: underline;
+        position: absolute;
+        margin-left: auto;
+        margin-right: auto;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+    }
+    .page {
+        margin-top: 15%;
+        margin-bottom: 5%;
+        width: 100%;
+    }
+    .btn_general {
+        margin-top: 10%;
+        text-align: center;
+    }
+    .centered {
+        text-align: center;
+    }
+    #ras {
+        background-color: #4997D6;
+        border: solid 1px #707070;
+        color: white;
+        font-size: 16px;
+        text-align: center;
+        width:80%;
+        margin-left: auto;
+        margin-right: auto;
+        font-weight: bold;
+        padding-top:1%;
+        padding-bottom: 1%;
+    }
+    .alerts {
+        margin-bottom: 10%;
+    }
+    .menu-launcher {
+        position: absolute;
+        left:0;
+        top:0;
+    }
+    .nav-home {
+        margin-top: 0.5cm;
+    }
+</style>
+<script type="text/javascript">
+    window.current_page="home";
+    document.getElementById("logout").addEventListener("click", logout);
+
+    function show_alert_img(event) {
+        let elt = $(event.target);
+        let target_img = elt.attr("target_img");
+        
+        let div = document.createElement("div");
+        let image = document.createElement("img");
+        image.src = target_img;
+        image.style.width = "100%";
+        div.appendChild(image);
+
+        let a = document.createElement("a");
+        a.innerHTML = "Cliquez ici pour voir en plein écran";
+        a.href = target_img;
+        a.setAttribute("target","_blank");
+
+        div.appendChild(a);
+
+        send_message(div, "Image Jointe");
+    }
+
+    async function update() {
+        // affiche les alertes.
+        // on demande la récupération des alertes.
+        let returned_data = await askdata("get_alerts",null, getUserToken());
+        
+        if (returned_data === false) {
+            return;
+        }
+
+        let alerts = returned_data.data.alerts;
+        let ras = $("#ras");
+        let alist = $("#alerts-list");
+        if(alerts.length <= 0) {
+            ras.css("display","block");
+            return;
+        }
+        ras.css("display","none");
+        let ul = document.createElement("ul");
+        alerts.forEach(alert => {
+            // let li = document.createElement("li");
+            // li.innerHTML = alert.id +" " + alert.title + " "+ alert.author +" "+alert.content +" "+alert.img;
+            // ul.appendChild(li);
+            let my_elt = $("#alert-card").clone();
+            let content = my_elt.children(".card-body");
+            content.children(".card-title").html(alert.title);
+            content.children(".card-subtitle").html("par "+alert.author+" le "+alert.date);
+            content.children(".card-text").html(alert.content.replace("\n","<br>"));
+            if (alert.img != null && alert.img != "") {
+                content.children(".card-link").first().html("Image");
+                content.children(".card-link").first().bind("click",show_alert_img);
+                if (!alert.img.includes("http")) {
+                    content.children(".card-link").first().attr("target_img",API_URL.replace("api.php","")+alert.img);
+                } else {
+                    content.children(".card-link").first().attr("target_img",alert.img);
+                }
+            } else {
+                content.children(".card-link").first().html("");
+            }
+            if (alert.location != null && alert.location != "") {
+                content.children(".card-link").last().html("GPS");
+                content.children(".card-link").last().attr("href","http://maps.google.com/maps?q="+alert.location);
+            } else {
+                content.children(".card-link").last().html("");
+            }
+            // alert type
+            let badge = content.children(".badge").last();
+            if(alert.validated == 0) {
+                badge.html("En Attente");
+                badge.addClass("badge-warning");
+            } else {
+                let ta = alert.type_id;
+                badge.html(alert.type);
+                if(ta == 1) {
+                    badge.addClass("badge-danger");
+                } else if (ta == 2) {
+                    badge.addClass("badge-primary");
+                } else if (ta == 3) {
+                    badge.addClass("badge-info");
+                } else if (ta >= 4) {
+                    badge.addClass("badge-dark");
+                }
+            }
+
+            my_elt.css("display","block");
+            alist.append(my_elt);
+        });
+        
+    }
+
+    async function goto_alert() {
+        await change_page("send_alert");
+    }
+
+    document.getElementById("report").addEventListener("click", goto_alert);
+
+    async function getAccountInfo() {
+        let data = await askdata("profile", {request: "getProfile"}, getUserToken());
+        if (data.success) {
+            if (data.data.validated != 1) {
+                
+                function showinfomsg() {
+                    let explanaition_text = `Afin d'éviter une mauvaise utilisation de notre service, votre compte doit être validé par un membre du conseil municipal afin que 
+                vous puissiez envoyer des alertes. <b>Si vous rencontrez actuellement une urgence, merci de contacter la mairie via le numéro de téléphone <a href='tel:+33321000000'>0321000000</a>.</b>`;
+                    send_message(explanaition_text, "Impossible de créer une alerte");
+                }
+                
+
+                let repbtn = $("#report");
+                repbtn.attr("disabled", "disabled");
+                repbtn.attr("title", "Votre compte n'est pas validé.");
+                repbtn.css("display","none");
+
+                let badge = $("#badge_info");
+                let mybadge = $(document.createElement("span"));
+                mybadge.attr("class", "badge badge-warning");
+                mybadge.html("Compte en attente de validation.  Cliquez <a id='info_nv' href='#'>ici</a> pour plus d'info.");
+                mybadge.attr("title","Vous devez être validé pour envoyer des alertes.");
+                badge.append(mybadge);
+                $("#info_nv").click(showinfomsg);
+            }
+        }
+    }
+
+</script>
+<img class="fixed-logo" src="media/img/logo.png">
+<nav class="navbar bg-white navbar-light nav-home">
+    <button class="navbar-toggler collapsed" type="button" data-toggle="collapse" data-target="#x" aria-expanded="false">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <span class="navbar-brand" href="#"><div class="home-title">VIGILIE</div></span>
+    <div class="navbar-collapse collapse" id="x">
+      <ul class="nav navbar-nav" style="visibility: visible;">
+        <li class="nav-item">
+          <a class="nav-link" href="#" id="logout">Se déconnecter</a>
+        </li>    
+      </ul>
+    </div>  
+  </nav>
+
+<div class="page">
+    <div class="row">
+        <div class="col-sm-0 col-md-4 col-lg-4"></div>
+        <div class="col-sm-12 col-md-4 col-lg-4">
+            <div class="buttons">
+                <button class="btn-1" id="report">Signaler un danger</button><br>
+                <button class="btn-3" id="urgency">Urgence</button>
+            </div> 
+        </div>
+    </div>
+    <div id="badge_info"></div>
+    <div class="alerts" id="alerts-list">
+        <!-- Liste des alertes. -->
+        <div id="ras">
+            Rien à signaler
+        </div>
+        <div class="card" style="display: none;margin-bottom: 1%;" id="alert-card">
+            <div class="card-body">
+              <span class="badge" style="position:absolute; right:1%">Status</span>
+              <h5 class="card-title">Card title</h5>
+              <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+              <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+              <a href="#" class="card-link">Card link</a>
+              <a href="#" target="_blank" class="card-link">Another link</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    update();
+    getAccountInfo();
+    document.getElementById("urgency").addEventListener("click",function(listener) { changeLocalPage("urgence") });
+</script>

@@ -1,0 +1,134 @@
+<style>
+    .inscr-title {
+        margin-top: 0.5cm;
+        color: #4997D6;
+        font-size: 25px;
+        font-variant: small-caps;
+        text-align: center;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .form {
+        margin-top: 15%;
+        margin-bottom: 5%;
+        width: 100%;
+        color:#4997D6;
+        font-size: 20px;
+    }
+    .form label {
+        color:#4997D6;
+        font-size: 20px;
+    }
+    .form .input-text {
+        width: 100%;
+    }
+    .form-group {
+        width: 100%;
+    }
+    .check {
+        margin-left: 1%;
+    }
+    .check-text {
+        margin-left: 5%;
+    }
+</style>
+<script type="text/javascript">
+    function cancel_register() {
+        location.reload();
+    }
+    function register() {
+        // on récupére toutes les valeurs ...
+        let pse = 0;
+        if ($("#pse").is(":checked")) {
+            pse = 1;
+        }
+        let tosend = {
+            mail: $("#mail").val(),
+            username: $("#username").val(),
+            lastname: $("#lastname").val(),
+            firstname: $("#firstname").val(),
+            password: $("#password").val(),
+            password_conf: $("#password_conf").val(),
+            address: $("#address").val(),
+            pse:pse
+        };
+        if (!$("#cgu").is(":checked")) {
+            throw_error("Vous devez accepter les conditions générales d'utilisations afin de vous inscrire.","ATTENTION !");
+            return;
+        }
+        if(tosend.password.length < 8) {
+            throw_error("Votre mot de passe doit faire 8 caractères ou plus !","Erreur Mot de Passe");
+            return;
+        }
+        if(tosend.password !== tosend.password_conf) {
+            throw_error("Les deux mots de passes ne correspondent pas !","Erreur Mot de Passe");
+            return;
+        }
+        //console.log($("#pse").is(":checked"));
+        for(let [key, value] of Object.entries(tosend)) {
+            if (value != 0 && (value == "" || value == undefined)) {
+                throw_error("Le champ "+key+" n'a pas été renseigné, veuillez le renseigner !", "Erreur Formulaire");
+                return;
+            }
+        }
+        askdata("register",tosend);
+    }
+    document.getElementById("cancel").addEventListener("click",cancel_register);
+</script>
+<img class="fixed-logo" src="media/img/logo.png">
+<div class="inscr-title">INSCRIPTION</div>
+<form action="#" onsubmit="register();return false">
+    <div class="form">    
+        <div class="form-group">
+            <label for="mail">Adresse Mail :</label>
+            <input id="mail" type="email" class="form-control input-text" required placeholder="Entrez ici votre adresse mail">
+        </div>
+        <div class="form-group">
+            <label for="username">Nom d'utilisateur :</label>
+            <input id="username" type="text" class="form-control input-text" required placeholder="Entrez votre nom d'utilisateur">
+        </div>
+        
+        <div class="form-group">
+            <label for="lastname">Nom :</label>
+            <input id="lastname" type="text" class="form-control input-text" required placeholder="Entrez votre nom">
+        </div>
+        
+        <div class="form-group">
+            <label for="firstname">Prénom :</label>
+            <input id="firstname" type="text" class="form-control input-text" required placeholder="Entrez votre prénom">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Mot de passe :</label>
+            <input id="password" type="password" class="form-control input-text" required placeholder="Entrez un mot de passe">
+            <small id="pswd_ok" class="form-text text-muted">Votre mot de passe doit faire 8 caractères ou plus pour être sécurisé.</small>
+        </div>
+        <div class="form-group">
+            <label for="password_conf">Confirmation du mot de passe :</label>
+            <input id="password_conf" type="password" class="form-control input-text" required placeholder="Entrez de nouveau votre mot de passe">
+            <small id="pswd_ok" class="form-text text-muted">Cette case doit correspondre à ce qui a été entré au dessus !</small>
+        </div>
+
+        
+        <div class="form-group">
+            <label for="address">Adresse :</label>
+            <textarea class="form-control" id="address" required rows="2" placeholder="Entrez votre adresse postale"></textarea>
+        </div>
+
+        <div class="form-group">
+            <input class="form-check-input check" type="checkbox" value="" id="cgu">
+            <label for="cgu" class="check-text">J'accepte les conditions générales d'utilisation</label>
+        </div>
+
+        <div class="form-group">
+            <input class="" type="hidden" value="" id="pse">
+            <!-- <label for="pse" class="check-text">Je suis formé(e) aux premiers secours et accepte d'être contacté(e) si je suis à proximité d'une victime</label> -->
+        </div>
+
+        <div class="form-group">
+            <button class="btn-2" id="cancel" style="width:40%">Annuler</button><label class="mid"  style="width:20%"></label><input type="submit" class="btn-3 btn_general" id="submit" value="Valider" style="width:40%">
+        </div>
+
+
+    </div>
+</form>

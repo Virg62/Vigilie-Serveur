@@ -1,0 +1,398 @@
+<h2>Vigilie - Administration</h2>
+<div class="btn-col">
+    <button type="button" class="btn btn-danger" id="logout">Se Déconnecter</button>
+</div>
+<h4>Bienvenue dans votre espace Administration !</h4>
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" data-toggle="tab" href="#alerts">Gestion des Alertes</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#users">Gestion des utilisateurs</a>
+    </li>
+</ul>
+  <div id="myTabContent" class="tab-content">
+    <div class="tab-pane fade active show" id="alerts">
+        <button type="button" class="btn btn-info" id="relalert">Recharger les Alertes</button>
+      <h3>Liste des Alertes non validées</h3>
+      <div id="a_not_validated">
+
+      </div>
+      <h3>Liste des Alertes Validées</h3>
+      <div id="a_validated">
+
+      </div>
+        <div class="card" style="display: none;margin-bottom: 1%;" id="alert-card">
+            <div class="card-body">
+                <span class="badge" style="position:absolute; right:1%">Status</span>
+                <h5 class="card-title">Card title</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Card subtitle</h6>
+                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                <a href="#" class="card-link">Card link</a>
+                <a href="#" target="_blank" class="card-link">Another link</a>
+                <div class="notval" style="display: none;"><button type="button" class="btn btn-success val_alert" title="Valider l'Alerte">Valider</button> <select class="type_alert"></select> <button type="button" class="btn btn-danger del_alert" title="Supprimer l'Alerte">Supprimer</button></div>
+                <div class="val" style="display: none;"><button type="button" class="btn btn-danger del_alert" title="Supprimer l'Alerte">Supprimer</button></div>
+                <input type="hidden" class="alert_id" value="0">
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="users">
+        <button type="button" class="btn btn-info" id="reluser">Recharger les Utilisateurs</button>
+        <h3>Liste des utilisateurs non validés</h3>
+        <div id="u_not_validated">
+
+        </div>
+        <h3>Liste des utilisateurs validés</h3>
+        <div id="u_validated">
+
+        </div>
+
+        <div class="media border p-3" id="user_block" style="display: none;">
+            <div class="media-body">
+                <h4><span class="firstname">PRÉNOM</span> <span class="lastname">NOM</span></h4> <div class="badges"></div>
+                <input type="hidden" class="id_user" value="0">
+                <p><b>Nom d'utilisateur : </b> <span class="username">NOM D'UTILISATEUR</span> <b>@ :</b> <span class="mail">MAIL</span> <b>Adresse :</b> <span class="adr">x rue y</span></p>
+                <div class="notval" style="display: none;"><button type="button" class="btn btn-success val_user" title="Valider l'utilisateur (lui accorder le droit d'envoyer des alertes)">Valider</button> <button type="button" class="btn btn-danger del_user" title="Supprimer l'utilisateur">Supprimer</button></div>
+                <div class="val" style="display: none;"><button type="button" class="btn btn-info promote" title="Promouvoir l'utilisateur au rang d'Administateur">Promouvoir</button> <button type="button" class="btn btn-warning destitute" title="Remettre l'utilisateur au rang d'utilisateur">Déstituer</button> <button type="button" class="btn btn-danger del_user" title="Supprimer l'utilisateur">Supprimer</button></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+$("#logout").click(function() {
+    logout();
+})
+
+function show_alert_img(event) {
+        let elt = $(event.target);
+        let target_img = elt.attr("target_img");
+        
+        let div = document.createElement("div");
+        let image = document.createElement("img");
+        image.src = target_img;
+        image.style.width = "100%";
+        div.appendChild(image);
+
+        let a = document.createElement("a");
+        a.innerHTML = "Cliquez ici pour voir en plein écran";
+        a.href = target_img;
+        a.setAttribute("target","_blank");
+
+        div.appendChild(a);
+
+        send_message(div, "Image Jointe");
+}
+
+async function getUsers() {
+    
+    // récupération du profil actuel
+    let currentUID = 0;
+    let first_req = {request: "getProfile"};
+    let first_data = await askdata("profile", first_req);
+    if (first_data != false) {
+        if (first_data.success) {
+            currentUID = first_data.data.id;
+        } else {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    let request = {request: "list_users"};
+    let data = await askdata("admin",request);
+    let users;
+    if (data != false) {
+        if (data.success) {
+            users = data.data;
+        } else {
+            throw_error("Erreur de requête : "+data.message, "Erreur");
+            return;
+        }
+    } else {
+        throw_error("Une erreur de connexion s'est produite, veuillez réessayer ultérieurement", "Echec de connexion");
+        return;
+    }
+    
+    // remet à zéro les div des types d'utilisateurs
+    $("#u_validated").html("");
+    $("#u_not_validated").html("");
+    
+    let validated_users = users.filter(user => user.valide == 1);
+    let not_validated_users = users.filter(user => user.valide == 0);
+
+    if (not_validated_users.length == 0) {
+        $("#u_not_validated").html("<p style='text-align: center'><i>Aucun Utilisateur à afficher.</i></p>");
+    }
+
+    // traitement utilisateurs validés
+    validated_users.forEach((user) => {
+        let master_div = $("#u_validated");
+        let div = $("#user_block").clone();
+        div.attr("id","");
+        div.find(".firstname").html(user.firstname);
+        div.find(".id_user").val(user.id_user);
+        div.find(".lastname").html(user.lastname);
+        div.find(".username").html(user.username);
+        div.find(".mail").html("<a href='mailto:"+user.mail+"'>"+user.mail+"</a>");
+        div.find(".adr").html(user.address);
+        div.find(".val").css("display","block");
+
+        // ajout badge
+        let badge = $(document.createElement("span"));
+        badge.attr("class", "badge badge-primary");
+        badge.html(user.label_utype);
+        div.find(".badges").append(badge);
+
+        // verification du type d'utilisateur
+        let val = div.find(".val");
+        if (user.type_user >1) {
+            val.find(".promote").css("display","none");
+            val.find(".del_user").css("display","none");
+            // vérification si pas utilisateur actuel
+            if (currentUID == user.id_user) {
+                val.find(".destitute").attr("disabled","");
+                val.find(".destitute").attr("title","Vous ne pouvez pas vous déstituer !");
+            } else {
+                // ajout eventlistener
+                val.find(".destitute").click(user_destitute);
+            }
+        } else {
+            val.find(".destitute").css("display","none");
+            // event listener des boutons
+            val.find(".del_user").click(user_delete);
+            val.find(".promote").click(user_promote);
+        }
+        
+        div.css("display", "block");
+
+        master_div.append(div);
+    });
+
+    // traitement des utilisateurs non validés
+    not_validated_users.forEach((user) => {
+        let master_div = $("#u_not_validated");
+        let div = $("#user_block").clone();
+        div.attr("id","");
+        div.find(".id_user").val(user.id_user);
+        div.find(".firstname").html(user.firstname);
+        div.find(".lastname").html(user.lastname);
+        div.find(".username").html(user.username);
+        div.find(".mail").html("<a href='mailto:"+user.mail+"'>"+user.mail+"</a>");
+        div.find(".adr").html(user.address);
+        div.find(".notval").css("display","block");
+        div.css("display", "block");
+
+        // event listener des boutons
+        div.find(".del_user").click(user_delete);
+        div.find(".val_user").click(user_validate);
+
+        master_div.append(div);
+    });
+    
+}
+// récupération de l'id de l'utilisateur
+function user_getSelectedID(event) {
+    let parent = $(event.target.parentElement.parentElement);
+    let uid = parent.find(".id_user").val();
+    return uid;
+}
+
+
+async function user_destitute(event) {
+    let uid = user_getSelectedID(event);
+    let data = {request: "destitute", user_id: uid};
+    await user_send(data);
+}
+
+async function user_delete(event) {
+    let uid = user_getSelectedID(event);
+    if (confirm("Confirmer la supression de l'utilisateur ?")) {
+        let data = {request: "delete_user", user_id: uid};
+        await user_send(data);
+    }
+}
+
+async function user_promote(event) {
+    let uid = user_getSelectedID(event);
+    let data = {request: "promote", user_id: uid};
+    await user_send(data);
+}
+
+async function user_validate(event) {
+    let uid = user_getSelectedID(event);
+    let data = {request: "accept_user", user_id: uid};
+    await user_send(data);
+}
+
+async function user_send(data) {
+    let request = await askdata("admin", data);
+    if (request) {
+        if (request.success) {
+            getUsers();
+        } else {
+            throw_error("Une erreur est survenue lors de l'exécution de la commande. Message d'erreur : "+request.message, "Échec de commande");
+            return;
+        }
+    } else {
+        throw_error("Une erreur générale est survenue", "Échec générale");
+        return;
+    }
+}
+getUsers();
+
+async function getAlerts() {
+    // vérification si les paramètres de base existent
+    if (document.alert_type == undefined) {
+        let types = await askdata("admin", {request: "list_atype"});
+        if (types!=false) {
+            if (types.success) {
+                document.alert_type = types.data;
+            }
+        }
+    }
+    // affiche les alertes.
+    // on demande la récupération des alertes.
+    let returned_data = await askdata("get_alerts",{all: true});
+    $("#a_not_validated").html("");
+    $("#a_validated").html("");
+    if (returned_data === false) {
+        return;
+    }
+
+    let alerts = returned_data.data.alerts;
+
+    // filtrage des alertes
+    let validated = alerts.filter(alert => alert.validated == 1);
+    let not_validated = alerts.filter(alert => alert.validated == 0);
+
+    let ras = $("#a_not_validated");
+    let div_not_validated = $("#a_not_validated");
+    let div_validated = $("#a_validated");
+    if(not_validated.length <= 0) {
+        ras.html("<p style='text-align:center'><i>Aucune alerte à afficher</i></p>");
+    }
+    let ul = document.createElement("ul");
+    alerts.forEach(alert => {
+        let my_elt = $("#alert-card").clone();
+        my_elt.attr("id","");
+        let content = my_elt.children(".card-body");
+        content.children(".card-title").html(alert.title);
+        content.children(".card-subtitle").html("par "+alert.author+" le "+alert.date);
+        content.children(".card-text").html(alert.content.replace("\n","<br>"));
+        content.find(".alert_id").val(alert.id);
+        if (alert.img != null && alert.img != "") {
+            content.children(".card-link").first().html("Image");
+            content.children(".card-link").first().bind("click",show_alert_img);
+            if (!alert.img.includes("http")) {
+                content.children(".card-link").first().attr("target_img",API_URL.replace("api.php","")+alert.img);
+            } else {
+                content.children(".card-link").first().attr("target_img",alert.img);
+            }
+        } else {
+            content.children(".card-link").first().html("");
+        }
+        if (alert.location != null && alert.location != "") {
+            content.children(".card-link").last().html("GPS");
+            content.children(".card-link").last().attr("href","http://maps.google.com/maps?q="+alert.location);
+        } else {
+            content.children(".card-link").last().html("");
+        }
+
+        // event listener
+        content.find(".del_alert").click(alert_delete);
+        my_elt.css("display","block");
+        
+        // alert type
+        let badge = content.children(".badge").last();
+        if(alert.validated == 0) {
+            badge.html("En Attente");
+            badge.addClass("badge-warning");
+            content.find(".notval").css("display","block");
+            // remplissage types...
+            let select = content.find(".type_alert");
+            content.find(".val_alert").click(alert_validate);
+            document.alert_type.forEach((type) => {
+                let option = $(document.createElement("option"));
+                option.val(type.id);
+                option.html(type.label);
+                if (type.id == 5) {
+                  option.attr("selected","selected");  
+                }
+                select.append(option);
+            });
+
+
+
+            div_not_validated.append(my_elt);
+        } else {
+            let ta = alert.type_id;
+            badge.html(alert.type);
+            if(ta == 1) {
+                badge.addClass("badge-danger");
+            } else if (ta == 2) {
+                badge.addClass("badge-primary");
+            } else if (ta == 3) {
+                badge.addClass("badge-info");
+            } else if (ta >= 4) {
+                badge.addClass("badge-dark");
+            }
+            content.find(".val").css("display","block");
+            div_validated.append(my_elt);
+        }
+
+        
+    });
+    
+}
+    
+getAlerts();
+
+function alert_getSelectedID(event) {
+    let parent = $(event.target.parentElement.parentElement);
+    let uid = parent.find(".alert_id").val();
+    return uid;
+}
+
+async function alert_send(data) {
+    let request = await askdata("admin", data);
+    if (request) {
+        if (request.success) {
+            getAlerts();
+        } else {
+            throw_error("Une erreur est survenue lors de l'exécution de la commande. Message d'erreur : "+request.message, "Échec de commande");
+            return;
+        }
+    } else {
+        throw_error("Une erreur générale est survenue", "Échec générale");
+        return;
+    }
+    return request;
+}
+
+async function alert_validate(event) {
+    let id = alert_getSelectedID(event);
+    let typeA = $(event.target.parentElement).find(".type_alert").val();
+    if(typeA == 1) {
+        if (!confirm("Confirmer l'envoi d'alerte en tant qu'Urgence (Ceci va notifier tout les appareils !!)"))  {
+            return;
+        }
+    }
+    let rep = await alert_send({request: "accept_alert", alert_id: id, type: typeA});
+    if (rep.success && rep.msg) {
+        send_message("L'urgence a été envoyée, l'id du message est : "+rep.messid, "Urgence validée avec succès")
+    }
+}
+
+async function alert_delete(event) {
+    let id = alert_getSelectedID(event);
+    if (confirm("Confirmer la supression de l'Alerte ?")) {
+       await alert_send({request: "remove_alert", alert_id: id});
+    }
+    return;
+}
+
+$("#relalert").click(getAlerts);
+$("#reluser").click(getUsers);
+
+</script>
