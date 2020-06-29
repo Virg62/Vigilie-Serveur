@@ -73,9 +73,9 @@ NOTE : La commande permet d'installer le module reallysimplejwt ([doc ici](https
 * Idem que pour ci-dessus (nom du package par défaut : `fr.virgile62150.vigilie.clientcm`)
 * Vous pouvez récuperer votre clé API dans 'Paramètres du Projet', dans l'onglet 'Cloud Messaging' (c'est la clé du serveur).
 
-- Modifiez votre clé API dans le fichier [utilz/notify.php](utilz/notify.php)
+- Modifiez votre clé API dans le fichier [utilz/notify.php](utils/notify.php)
 
-- Modifier le fichier [utilz/db.php](utilz/db.php) afin d'y renseigner votre nom d'utilisateur de base de données, le mot de passe et le nom de la base de données.
+- Modifier le fichier [utilz/db.php](utils/db.php) afin d'y renseigner votre nom d'utilisateur de base de données, le mot de passe et le nom de la base de données.
 
 - Il est maintenant possible de se connecter à l'application en créant un compte via le client.
 

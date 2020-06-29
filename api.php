@@ -2,36 +2,36 @@
 header("Access-Control-Allow-Origin: *");
 session_start();
 require 'vendor/autoload.php';
-require "utilz/db.php";
+require "utils/db.php";
 header('Content-Type: application/json');
-$requete = $_POST["request"];
+$request = $_POST["request"];
 if (is_string($_POST["data"])) {
-    $data = json_decode($_POST["data"],true);
+    $data = json_decode($_POST["data"], true);
 } else {
     $data = $_POST["data"];
 }
 $token = $_POST["token"];
 $rep = array();
-switch ($requete) {
-    
+switch ($request) {
+
     case "check":
-        $rep = array("success" => true, "message" => "connexion disponible", "data" => array("ver" => "a0.1", "sver" => "a0.1"));
-    break;
+        $rep = ["success" => true, "message" => "connexion disponible", "data" => ["ver" => "a0.1", "sver" => "a0.1"]];
+        break;
 
     case "login":
         require "auth/login.php";
         $rep = login($data);
-    break;
+        break;
 
     case "register":
         require "auth/register.php";
         $rep = register($data);
-    break;
+        break;
 
     case "send_alert":
         require "data/alerts.php";
         $rep = sendAlert($data, $token);
-    break;
+        break;
 
     case "get_alerts":
         require "data/alerts.php";
@@ -39,41 +39,35 @@ switch ($requete) {
             $data["all"] = false;
         }
         $rep = getAlerts($data, $token);
-    break;
+        break;
 
     case "connected":
         require "auth/logged.php";
         $rep = logged($token);
-    break;
-
-    case "logout":
-        // todo
-        // je pense que là j'ai pas grand chose à faire en php, c'est sur le client à faire l'action normally
-    break;
+        break;
 
     case "get_page":
         require "data/pages.php";
         $rep = getPage($data, $token);
-    break;
+        break;
 
     case "profile":
         require "auth/profile.php";
         $rep = profile($data, $token);
-    break;
+        break;
 
     case "admin":
         require "admin/admin.php";
         $rep = admin($data, $token);
-    break;
+        break;
 
     default:
-        $rep = array("success" => false, "message" => "La commande n'a pas été trouvée : ".$requete, "data" => null);
-    break;
+        $rep = ["success" => false, "message" => "La commande n'a pas été trouvée : " . $request, "data" => null];
+        break;
 }
 
 echo json_encode($rep);
 
 /*
-* Le PHP, c'est bien !
+* Le PHP, c'est bien ! 👍
 */
-?>
